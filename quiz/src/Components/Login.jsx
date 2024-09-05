@@ -4,14 +4,14 @@ import api from '../Services/api';
 import { setToken } from '../Services/auth';
 
 function Login() {
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState(''); // Using username instead of email
   const [password, setPassword] = useState('');
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      const response = await api.post('/login', { email, password });
+      const response = await api.post('/login', { username, password }); // Send username instead of email
       setToken(response.data.token);
       navigate('/');
     } catch (error) {
@@ -23,10 +23,10 @@ function Login() {
     <form onSubmit={handleLogin}>
       <h2>Login</h2>
       <input
-        type="email"
-        placeholder="Email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
+        type="text"
+        placeholder="Username" // Changed placeholder to Username
+        value={username}
+        onChange={(e) => setUsername(e.target.value)}
         required
       />
       <input

@@ -3,14 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import api from '../Services/api';
 
 function Signup() {
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState(''); // Using username instead of email
   const [password, setPassword] = useState('');
   const navigate = useNavigate();
 
   const handleSignup = async (e) => {
     e.preventDefault();
     try {
-      await api.post('/signup', { email, password });
+      await api.post('/signup', { username, password });
       navigate('/login');
     } catch (error) {
       console.error('Signup failed', error);
@@ -21,10 +21,10 @@ function Signup() {
     <form onSubmit={handleSignup}>
       <h2>Signup</h2>
       <input
-        type="email"
-        placeholder="Email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
+        type="text"
+        placeholder="Username"
+        value={username}
+        onChange={(e) => setUsername(e.target.value)}
         required
       />
       <input
