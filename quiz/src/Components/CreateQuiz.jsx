@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../Services/api';
 import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -21,6 +22,21 @@ function CreateQuiz() {
   const [currentAnswer, setCurrentAnswer] = useState('');
   const [currentLocation, setCurrentLocation] = useState({ latitude: 57.7046, longitude: 11.9299 });
   const [errorMessage, setErrorMessage] = useState(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const navigate = useNavigate();
+
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setErrorMessage('You must be logged in to create a quiz.');
+      setTimeout(() => {
+        navigate('/login');
+      }, 3000);
+    } else {
+      setIsAuthenticated(true);
+    }
+  }, [navigate]);
 
   useEffect(() => {
     if (navigator.geolocation) {
@@ -81,7 +97,7 @@ function CreateQuiz() {
     }
 
     try {
-      const token = localStorage.getItem('token'); // Assuming you handle token storage
+      const token = localStorage.getItem('token');
 
       for (let i = 0; i < questions.length; i++) {
         const quizData = {
@@ -112,6 +128,16 @@ function CreateQuiz() {
       setErrorMessage('Error creating quiz');
     }
   };
+
+  if (!isAuthenticated) {
+    return (
+      <div>
+        <h2>Create a New Quiz</h2>
+        {errorMessage && <p className="error-message">{errorMessage}</p>}
+        <p>Redirecting to login page...</p>
+      </div>
+    );
+  }
 
   return (
     <div>
