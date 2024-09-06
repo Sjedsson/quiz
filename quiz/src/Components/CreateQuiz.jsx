@@ -20,44 +20,41 @@ function CreateQuiz() {
   const [questions, setQuestions] = useState([]);
   const [currentQuestion, setCurrentQuestion] = useState('');
   const [currentAnswer, setCurrentAnswer] = useState('');
-  const [currentLocation, setCurrentLocation] = useState({ latitude: 57.7046, longitude: 11.9299 });
+  const [currentLocation, setCurrentLocation] = useState({ latitude: null, longitude: null });
   const [errorMessage, setErrorMessage] = useState(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoadingLocation, setIsLoadingLocation] = useState(true);  // Loading state for geolocation
   const navigate = useNavigate();
-
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      setErrorMessage('You must be logged in to create a quiz.');
-      setTimeout(() => {
-        navigate('/login');
-      }, 3000);
-    } else {
-      setIsAuthenticated(true);
-    }
-  }, [navigate]);
 
   useEffect(() => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          setCurrentLocation({ latitude: position.coords.latitude, longitude: position.coords.longitude });
+          setCurrentLocation({
+            latitude: position.coords.latitude.toString(),
+            longitude: position.coords.longitude.toString(),
+          });
+          setIsLoadingLocation(false);  // Stop loading once location is obtained
           setErrorMessage(null);
         },
         (error) => {
           console.error('Error getting location:', error);
           setErrorMessage('Error getting location. Defaulting to Göteborg.');
+          setIsLoadingLocation(false);  // Stop loading if error occurs
         }
       );
     } else {
-      setErrorMessage('Geolocation is not supported by your browser. Defaulting to Göteborg.');
+      setErrorMessage('Geolocation is not supported by your browser.');
+      setIsLoadingLocation(false);  // Stop loading if geolocation is not supported
     }
   }, []);
 
   const MapClickHandler = () => {
     useMapEvents({
       click(e) {
-        setCurrentLocation({ latitude: e.latlng.lat, longitude: e.latlng.lng });
+        setCurrentLocation({
+          latitude: e.latlng.lat.toString(),
+          longitude: e.latlng.lng.toString(),
+        });
         setErrorMessage(null);
       },
     });
@@ -65,13 +62,13 @@ function CreateQuiz() {
   };
 
   const handleAddQuestion = () => {
-    if (currentQuestion && currentAnswer && currentLocation) {
+    if (currentQuestion && currentAnswer && currentLocation.latitude && currentLocation.longitude) {
       const newQuestion = {
         question: currentQuestion,
         answer: currentAnswer,
         location: {
-          latitude: currentLocation.latitude.toString(),
-          longitude: currentLocation.longitude.toString(),
+          latitude: currentLocation.latitude,
+          longitude: currentLocation.longitude,
         },
       };
       setQuestions([...questions, newQuestion]);
@@ -96,8 +93,8 @@ function CreateQuiz() {
         questions: questions.map(q => ({
           question: q.question,
           answer: q.answer,
-          location: q.location
-        }))
+          location: q.location,
+        })),
       };
 
       const response = await fetch('https://fk7zu3f4gj.execute-api.eu-north-1.amazonaws.com/quiz/question', {
@@ -122,12 +119,11 @@ function CreateQuiz() {
     }
   };
 
-  if (!isAuthenticated) {
+  if (!isLoadingLocation && !currentLocation.latitude) {
     return (
       <div>
         <h2>Create a New Quiz</h2>
-        {errorMessage && <p>{errorMessage}</p>}
-        <p>Redirecting to login page...</p>
+        <p>{errorMessage}</p>
       </div>
     );
   }
@@ -160,27 +156,31 @@ function CreateQuiz() {
           required
         />
 
-        <div className="map-container">
-          <MapContainer center={[currentLocation.latitude, currentLocation.longitude]} zoom={13}>
-            <TileLayer
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            />
-            <MapClickHandler />
-            {questions.map((q, index) => (
-              <Marker
-                key={index}
-                position={[parseFloat(q.location.latitude), parseFloat(q.location.longitude)]}
-                icon={blueIcon}
-              >
-                <Popup>{q.question} - {q.answer}</Popup>
+        {isLoadingLocation ? (
+          <p>Loading your location...</p>
+        ) : (
+          <div className="map-container">
+            <MapContainer center={[parseFloat(currentLocation.latitude), parseFloat(currentLocation.longitude)]} zoom={13}>
+              <TileLayer
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+              />
+              <MapClickHandler />
+              {questions.map((q, index) => (
+                <Marker
+                  key={index}
+                  position={[parseFloat(q.location.latitude), parseFloat(q.location.longitude)]}
+                  icon={blueIcon}
+                >
+                  <Popup>{q.question} - {q.answer}</Popup>
+                </Marker>
+              ))}
+              <Marker position={[parseFloat(currentLocation.latitude), parseFloat(currentLocation.longitude)]} icon={blueIcon}>
+                <Popup>Här är din plats!</Popup>
               </Marker>
-            ))}
-            <Marker position={[currentLocation.latitude, currentLocation.longitude]} icon={blueIcon}>
-              <Popup>Selected Location</Popup>
-            </Marker>
-          </MapContainer>
-        </div>
+            </MapContainer>
+          </div>
+        )}
 
         <button type="button" onClick={handleAddQuestion}>Add Question</button>
         <h4>Questions:</h4>

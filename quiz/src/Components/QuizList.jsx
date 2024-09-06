@@ -116,7 +116,7 @@ function QuizListPage() {
                           </Marker>
                         );
                       }
-                      return null; // Skip rendering markers for invalid locations
+                      return null;
                     })}
                   </MapContainer>
                 </div>
