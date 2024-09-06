@@ -1,5 +1,6 @@
 import React from 'react';
 import QuizList from '../Components/QuizList';
+import '../Styles/QuizList.css'
 
 function QuizListPage() {
   return (

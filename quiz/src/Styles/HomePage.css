@@ -1,0 +1,35 @@
+.home-page-container {
+    text-align: center;
+    padding: 20px;
+  }
+  
+  .map-container {
+    height: 400px;
+    width: 100%;
+    margin-top: 20px;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  
+  .leaflet-container {
+    height: 100%;
+    width: 100%;
+  }
+  
+
+  .inline-login-button {
+    background-color: transparent;
+    color: #007bff;
+    border: none;
+    font-size: inherit;
+    padding: 0;
+    text-decoration: underline;
+    cursor: pointer;
+    display: inline;
+    vertical-align: baseline;
+  }
+  
+  .inline-login-button:hover {
+    color: #0056b3;
+  }
+  

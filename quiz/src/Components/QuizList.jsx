@@ -1,91 +1,146 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import Modal from 'react-modal';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
 
-function QuizList() {
+const blueIcon = new L.Icon({
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41],
+});
+
+Modal.setAppElement('#root');
+
+function QuizListPage() {
   const [quizzes, setQuizzes] = useState([]);
-  const [errorMessage, setErrorMessage] = useState(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const navigate = useNavigate();
+  const [selectedQuiz, setSelectedQuiz] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  useEffect(() => {
+  const fetchQuizzes = async () => {
     const token = localStorage.getItem('token');
-    if (!token) {
-      setErrorMessage('You must be logged in to view quizzes.');
-      setTimeout(() => {
-        navigate('/login');
-      }, 3000);
-    } else {
-      setIsAuthenticated(true);
+    try {
+      const response = await fetch('https://fk7zu3f4gj.execute-api.eu-north-1.amazonaws.com/quiz', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch quizzes');
+      }
+
+      const data = await response.json();
+      setQuizzes(data.quizzes || []);
+    } catch (error) {
+      console.error('Error fetching quizzes:', error.message);
     }
-  }, [navigate]);
+  };
 
   useEffect(() => {
-    const fetchQuizzes = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        console.log('Fetching quizzes with token:', token);
+    fetchQuizzes();
+  }, []);
 
-        const response = await fetch('https://fk7zu3f4gj.execute-api.eu-north-1.amazonaws.com/quiz', {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-          },
-        });
+  const openModal = (quiz) => {
+    console.log('Opening modal for quiz:', quiz);
+    setSelectedQuiz(quiz);
+    setIsModalOpen(true);
+  };
 
-        console.log('Response status:', response.status);
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          console.log('Error fetching quizzes:', errorData);
-          throw new Error(errorData.message || 'Failed to fetch quizzes');
-        }
-
-        const data = await response.json();
-        console.log('Fetched quizzes:', data);
-
-        setQuizzes(data.quizzes);
-        setErrorMessage(null);
-      } catch (error) {
-        console.error('Error fetching quizzes:', error);
-        setErrorMessage('Failed to load quizzes. Please try again later.');
-      }
-    };
-
-    if (isAuthenticated) {
-      fetchQuizzes();
-    }
-  }, [isAuthenticated]);
-
-  if (!isAuthenticated) {
-    return (
-      <div>
-        <h2>Available Quizzes</h2>
-        {errorMessage && <p>{errorMessage}</p>}
-        <p>Redirecting to login page...</p>
-      </div>
-    );
-  }
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setSelectedQuiz(null);
+  };
 
   return (
-    <div>
-      <h2>Available Quizzes</h2>
-      {errorMessage && <p>{errorMessage}</p>}
-      <ul>
-        {quizzes.length > 0 ? (
-          quizzes.map((quiz, index) => (
-            <li key={index}>
-              <strong>Quiz ID:</strong> {quiz.quizId ? quiz.quizId : 'No ID'}<br />
-              <strong>Created by:</strong> {quiz.username ? quiz.username : 'Unknown'}<br />
-              <strong>Number of Questions:</strong> {quiz.questions.length}
-            </li>
-          ))
-        ) : (
-          <p>No quizzes available</p>
+    <div className="quiz-container">
+      <h2>All Quizzes</h2>
+      <div className="quiz-list">
+        {quizzes.map((quiz, index) => (
+          <div key={`${quiz.quizId}-${index}`} className="quiz-item">
+            <h3>Quiz ID: {quiz.quizId}</h3>
+            <p>Created by: {quiz.username} (User ID: {quiz.userId})</p>
+
+            <div className="button-container">
+              <button onClick={() => openModal(quiz)} className="show-more-button">
+                Show More
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <Modal
+        isOpen={isModalOpen}
+        onRequestClose={closeModal}
+        className="modal-content"
+        overlayClassName="modal-overlay"
+      >
+        {selectedQuiz && (
+          <div>
+            <div className="modal-header">
+              <h2>Quiz Details: {selectedQuiz.quizId}</h2>
+              <button onClick={closeModal} className="close-button">Close</button>
+            </div>
+            <p>Created by User ID: {selectedQuiz.userId}</p>
+            {selectedQuiz.questions && selectedQuiz.questions.length > 0 ? (
+              <div>
+                <div className="map-container">
+                  <MapContainer
+                    center={[
+                      parseFloat(selectedQuiz.questions[0]?.location?.latitude || 0),
+                      parseFloat(selectedQuiz.questions[0]?.location?.longitude || 0),
+                    ]}
+                    zoom={13}
+                    className="map-container"
+                  >
+                    <TileLayer
+                      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                    />
+                    {selectedQuiz.questions.map((question, index) => {
+                      const { location } = question;
+                      if (location && location.latitude && location.longitude) {
+                        return (
+                          <Marker
+                            key={`${location.latitude}-${location.longitude}-${index}`}
+                            position={[parseFloat(location.latitude), parseFloat(location.longitude)]}
+                            icon={blueIcon}
+                          >
+                            <Popup>{question.question} - {question.answer}</Popup>
+                          </Marker>
+                        );
+                      }
+                      return null; // Skip rendering markers for invalid locations
+                    })}
+                  </MapContainer>
+                </div>
+                <h4>Questions:</h4>
+                <div className="questions-list">
+                  {selectedQuiz.questions.map((question, index) => (
+                    <div key={`${question.question}-${index}`} className="question-item">
+                      <p>Question: {question.question}</p>
+                      <p>Answer: {question.answer}</p>
+                      <p>
+                        Location: (Lat: {question.location?.latitude}, Long: {question.location?.longitude})
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <p>No questions available</p>
+            )}
+          </div>
         )}
-      </ul>
+      </Modal>
     </div>
   );
 }
 
-export default QuizList;
+export default QuizListPage;

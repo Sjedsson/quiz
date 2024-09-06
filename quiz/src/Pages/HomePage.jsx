@@ -1,5 +1,6 @@
 import React from 'react';
 import QuizMap from '../Components/QuizMap';
+import '../Styles/HomePage.css';
 
 function HomePage() {
   return (
