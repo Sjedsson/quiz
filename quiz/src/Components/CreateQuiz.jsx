@@ -3,16 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
+import icon from '../assets/icon.png';
+import '../Styles/QuizMap.css'
 
-// Icon for the map marker
-const blueIcon = new L.Icon({
-  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-  iconSize: [25, 41],
+const markerIcon = new L.Icon({
+  iconUrl: icon,
+  iconSize: [40, 40],
   iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41],
+  popupAnchor: [7, -54],
 });
 
 function CreateQuiz() {
@@ -22,7 +20,7 @@ function CreateQuiz() {
   const [currentAnswer, setCurrentAnswer] = useState('');
   const [currentLocation, setCurrentLocation] = useState({ latitude: null, longitude: null });
   const [errorMessage, setErrorMessage] = useState(null);
-  const [isLoadingLocation, setIsLoadingLocation] = useState(true);  // Loading state for geolocation
+  const [isLoadingLocation, setIsLoadingLocation] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -33,18 +31,18 @@ function CreateQuiz() {
             latitude: position.coords.latitude.toString(),
             longitude: position.coords.longitude.toString(),
           });
-          setIsLoadingLocation(false);  // Stop loading once location is obtained
+          setIsLoadingLocation(false);
           setErrorMessage(null);
         },
         (error) => {
           console.error('Error getting location:', error);
           setErrorMessage('Error getting location. Defaulting to Göteborg.');
-          setIsLoadingLocation(false);  // Stop loading if error occurs
+          setIsLoadingLocation(false);
         }
       );
     } else {
       setErrorMessage('Geolocation is not supported by your browser.');
-      setIsLoadingLocation(false);  // Stop loading if geolocation is not supported
+      setIsLoadingLocation(false);
     }
   }, []);
 
@@ -170,12 +168,12 @@ function CreateQuiz() {
                 <Marker
                   key={index}
                   position={[parseFloat(q.location.latitude), parseFloat(q.location.longitude)]}
-                  icon={blueIcon}
+                  icon={markerIcon}
                 >
                   <Popup>{q.question} - {q.answer}</Popup>
                 </Marker>
               ))}
-              <Marker position={[parseFloat(currentLocation.latitude), parseFloat(currentLocation.longitude)]} icon={blueIcon}>
+              <Marker position={[parseFloat(currentLocation.latitude), parseFloat(currentLocation.longitude)]} icon={markerIcon}>
                 <Popup>Här är din plats!</Popup>
               </Marker>
             </MapContainer>

@@ -6,7 +6,6 @@ import SignupPage from './Pages/SignupPage';
 import CreateQuizPage from './Pages/CreateQuizPage';
 import QuizListPage from './Pages/QuizListPage';
 import Header from './Components/Header';
-import Footer from './Components/Footer';
 import './styles/App.css';
 
 function App() {
@@ -20,7 +19,6 @@ function App() {
         <Route path="/create-quiz" element={<CreateQuizPage />} />
         <Route path="/quiz-list" element={<QuizListPage />} />
       </Routes>
-      <Footer />
     </div>
   );
 }
