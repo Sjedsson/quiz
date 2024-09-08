@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Modal from 'react-modal';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
+import { useNavigate } from 'react-router-dom';
 import L from 'leaflet';
 import icon from '../assets/icon.png';
 import '../Styles/QuizList.css';
@@ -19,9 +20,12 @@ function QuizListPage() {
   const [quizzes, setQuizzes] = useState([]);
   const [selectedQuiz, setSelectedQuiz] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const navigate = useNavigate();
+
+  const token = localStorage.getItem('token');
 
   const fetchQuizzes = async () => {
-    const token = localStorage.getItem('token');
+    if (!token) return;
     try {
       const response = await fetch('https://fk7zu3f4gj.execute-api.eu-north-1.amazonaws.com/quiz', {
         method: 'GET',
@@ -44,10 +48,9 @@ function QuizListPage() {
 
   useEffect(() => {
     fetchQuizzes();
-  }, []);
+  }, [token]);
 
   const openModal = (quiz) => {
-    console.log('Opening modal for quiz:', quiz);
     setSelectedQuiz(quiz);
     setIsModalOpen(true);
   };
@@ -56,6 +59,17 @@ function QuizListPage() {
     setIsModalOpen(false);
     setSelectedQuiz(null);
   };
+
+  if (!token) {
+    return (
+      <div className="login-prompt-container">
+        <h2>You need to log in to see the quiz list</h2>
+        <button onClick={() => navigate('/login')} className="login-button">
+          Log in
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="quiz-container">
@@ -97,8 +111,8 @@ function QuizListPage() {
                       parseFloat(selectedQuiz.questions[0]?.location?.longitude || 0),
                     ]}
                     zoom={13}
-                    className="map-container">
-
+                    className="map-container"
+                  >
                     <TileLayer
                       url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                       attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'

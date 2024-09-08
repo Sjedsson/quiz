@@ -23,6 +23,8 @@ function CreateQuiz() {
   const [isLoadingLocation, setIsLoadingLocation] = useState(true);
   const navigate = useNavigate();
 
+  const token = localStorage.getItem('token');
+
   useEffect(() => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -85,7 +87,6 @@ function CreateQuiz() {
     }
 
     try {
-      const token = localStorage.getItem('token');
       const quizData = {
         name: quizName,
         questions: questions.map(q => ({
@@ -116,6 +117,17 @@ function CreateQuiz() {
       setErrorMessage('Error creating quiz');
     }
   };
+
+  if (!token) {
+    return (
+      <div className="login-prompt-container">
+        <h2>You need to log in to create a quiz</h2>
+        <button onClick={() => navigate('/login')} className="login-button">
+          Log in
+        </button>
+      </div>
+    );
+  }
 
   if (!isLoadingLocation && !currentLocation.latitude) {
     return (

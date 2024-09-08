@@ -21,6 +21,7 @@ export function getUserFromToken() {
   return null;
 }
 
-export function removeToken() {
+export const clearToken = () => {
   localStorage.removeItem('token');
-}
+};
+
